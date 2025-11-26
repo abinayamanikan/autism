@@ -10,6 +10,23 @@ import os
 # Page config
 st.set_page_config(page_title="Autism Detection App", page_icon="🧠", layout="wide")
 
+# Custom CSS for orange header
+st.markdown("""
+<style>
+.stApp > header {
+    background-color: #FF8C00 !important;
+}
+
+.stApp > div[data-testid="stToolbar"] {
+    background-color: #FF8C00 !important;
+}
+
+.main .block-container {
+    padding-top: 2rem;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # Title
 st.title("🧠 Autism Detection Using Machine Learning")
 st.markdown("This app uses machine learning to assist in autism screening based on behavioral patterns.")

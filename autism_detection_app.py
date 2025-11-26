@@ -62,21 +62,23 @@ st.markdown("""
     }
     
     .result-success {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        color: white;
+        background: #e8f5e9;
+        color: #1b5e20;
         padding: 2rem;
         border-radius: 15px;
         text-align: center;
         margin: 1rem 0;
+        border: 2px solid #4caf50;
     }
     
     .result-warning {
-        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        color: white;
+        background: #fff3e0;
+        color: #e65100;
         padding: 2rem;
         border-radius: 15px;
         text-align: center;
         margin: 1rem 0;
+        border: 2px solid #ff9800;
     }
     
     .info-box {
@@ -109,6 +111,8 @@ st.markdown("""
         margin: 1rem 0;
         box-shadow: 0 15px 35px rgba(0,0,0,0.1);
     }
+    
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -642,7 +646,9 @@ elif st.session_state.current_page == 'games':
         if not st.session_state.current_game:
             if st.button("🚀 Start Emotion Game", key="start_emotion_game"):
                 emotions = {"😊": "Happy", "😢": "Sad", "😠": "Angry", "😴": "Sleepy", "😨": "Scared"}
-                emoji, name = np.random.choice(list(emotions.items()))
+                emotion_items = list(emotions.items())
+                selected_item = emotion_items[np.random.randint(len(emotion_items))]
+                emoji, name = selected_item
                 options = list(emotions.values())
                 np.random.shuffle(options)
                 
@@ -906,6 +912,17 @@ elif st.session_state.current_page == 'questionnaire':
     st.markdown('<div class="main-card">', unsafe_allow_html=True)
     st.markdown("### 📋 ASD Screening Questionnaire")
     
+    # Show active child info
+    if st.session_state.active_child:
+        child_info = st.session_state.child_profiles[st.session_state.active_child]
+        st.markdown(f"""
+        <div class="info-box">
+            <strong>👶 Active Child:</strong> {child_info['name']} (Age: {child_info['age']} months)
+        </div>
+        """)
+    else:
+        st.warning("⚠️ No child profile selected. Please create or select a child profile first.")
+    
     st.markdown("""
     <div class="info-box">
         This questionnaire is based on established screening tools and is for educational purposes only.
@@ -919,8 +936,13 @@ elif st.session_state.current_page == 'questionnaire':
         col1, col2 = st.columns(2)
         
         with col1:
-            child_age = st.number_input("Child's Age (months)", min_value=12, max_value=72, value=36)
-            child_gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+            if st.session_state.active_child:
+                child_info = st.session_state.child_profiles[st.session_state.active_child]
+                child_age = st.number_input("Child's Age (months)", min_value=12, max_value=72, value=child_info['age'])
+                child_gender = st.selectbox("Gender", ["Male", "Female", "Other"], index=["Male", "Female", "Other"].index(child_info['gender']))
+            else:
+                child_age = st.number_input("Child's Age (months)", min_value=12, max_value=72, value=36)
+                child_gender = st.selectbox("Gender", ["Male", "Female", "Other"])
         
         with col2:
             parent_concerns = st.selectbox("Do you have concerns about your child's development?", 
@@ -972,6 +994,7 @@ elif st.session_state.current_page == 'questionnaire':
             
             # Store result
             result = {
+                'child_name': st.session_state.child_profiles[st.session_state.active_child]['name'] if st.session_state.active_child else 'Unknown',
                 'child_age': child_age,
                 'child_gender': child_gender,
                 'parent_concerns': parent_concerns,
@@ -1039,18 +1062,22 @@ elif st.session_state.current_page == 'questionnaire':
     active_results = []
     if st.session_state.active_child and st.session_state.child_profiles[st.session_state.active_child].get('questionnaire_results'):
         active_results = st.session_state.child_profiles[st.session_state.active_child]['questionnaire_results']
+        st.markdown(f"#### 📈 Results for {st.session_state.child_profiles[st.session_state.active_child]['name']}")
     elif st.session_state.questionnaire_results:
         active_results = st.session_state.questionnaire_results
+        st.markdown("#### 📈 Previous Results")
     
     if active_results:
         st.markdown("#### 📈 Previous Results")
         
         results_df = pd.DataFrame([
             {
+                'Child': result.get('child_name', 'Unknown'),
                 'Date': result['timestamp'].strftime('%Y-%m-%d %H:%M'),
                 'Age (months)': result['child_age'],
                 'Score': f"{result['total_score']}/50",
-                'Percentage': f"{result['percentage']:.1f}%"
+                'Percentage': f"{result['percentage']:.1f}%",
+                'Concerns': result['parent_concerns']
             }
             for result in active_results
         ])
